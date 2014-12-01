@@ -6,7 +6,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nanobox-core/nanobox-server/utils"
+	"github.com/nanobox-core/utils"
+)
+
+const (
+	DefaultDir = "./tmp/db"
 )
 
 //
