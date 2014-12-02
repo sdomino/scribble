@@ -11,6 +11,7 @@ import (
 
 const (
 	DefaultDir = "./tmp/db"
+	Version    = "0.0.1"
 )
 
 //
