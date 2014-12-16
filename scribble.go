@@ -1,26 +1,26 @@
 package scribble
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
-	"github.com/nanobox-core/utils"
+	"github.com/nanobox-core/hatchet"
 )
 
-const (
-	DefaultDir = "./tmp/db"
-	Version    = "0.0.1"
-)
+//
+const Version = "0.0.1"
 
 //
 type (
 
-	// Driver represents
+	// Driver
 	Driver struct {
 		channels map[string]chan int
 		dir      string
+		log      *hatchet.Logger
 	}
 
 	// Transaction represents
@@ -32,90 +32,83 @@ type (
 	}
 )
 
-//
-var (
-	debugging bool
-)
+// New
+func New(dir string, logger hatchet.Logger) (*Driver, error) {
+	fmt.Printf("Creating database directory at '%v'...\n", dir)
 
-// Init
-func (d *Driver) Init(opts map[string]string) int {
-	fmt.Printf("Creating database directory at '%v'...\n", opts["db_dir"])
-
-	debugging = (opts["debugging"] == "true")
-
-	d.dir = opts["db_dir"]
+	scribble := &Driver{}
+	scribble.dir = dir
+	scribble.channels = make(map[string]chan int)
 
 	//
-	d.channels = make(map[string]chan int)
-
-	// make a ping channel
-	ping := make(chan int)
-	d.channels["ping"] = ping
-
-	//
-	if err := mkDir(d.dir); err != nil {
-		fmt.Printf("Unable to create dir '%v': %v", d.dir, err)
-		return 1
+	if err := mkDir(scribble.dir); err != nil {
+		return nil, err
 	}
 
 	//
-	return 0
+	return scribble, nil
 }
 
 // Transact
-func (d *Driver) Transact(trans Transaction) {
+func (d *Driver) Transact(trans Transaction) error {
 
 	//
 	done := d.getOrCreateChan(trans.Collection)
+	fail := make(chan error)
 
 	//
 	switch trans.Action {
 	case "write":
-		go d.write(trans, done)
+		go d.write(trans, done, fail)
 	case "read":
-		go d.read(trans, done)
+		go d.read(trans, done, fail)
 	case "readall":
-		go d.readAll(trans, done)
+		go d.readAll(trans, done, fail)
 	case "delete":
-		go d.delete(trans, done)
+		go d.delete(trans, done, fail)
 	default:
 		fmt.Println("Unsupported action ", trans.Action)
 	}
 
-	// wait...
-	<-done
+	// wait until we're done, or error
+	select {
+	case <-done:
+		return nil
+	case err := <-fail:
+		return err
+	}
 }
 
 // private
 
 // write
-func (d *Driver) write(trans Transaction, done chan<- int) {
+func (d *Driver) write(trans Transaction, done chan<- int, fail chan<- error) {
 
 	//
 	dir := d.dir + "/" + trans.Collection
 
 	//
 	if err := mkDir(dir); err != nil {
-		fmt.Println("Unable to create dir '%v': %v", dir, err)
-		os.Exit(1)
+		fail <- err
 	}
 
 	//
 	file, err := os.Create(dir + "/" + trans.Resource)
 	if err != nil {
-		fmt.Printf("Unable to create file %v/%v: %v", trans.Collection, trans.Resource, err)
-		os.Exit(1)
+		fail <- err
 	}
 
 	defer file.Close()
 
 	//
-	b := utils.ToJSONIndent(trans.Container)
+	b, err := json.MarshalIndent(trans.Container, "", "\t")
+	if err != nil {
+		fail <- err
+	}
 
 	_, err = file.WriteString(string(b))
 	if err != nil {
-		fmt.Printf("Unable to write to file %v: %v", trans.Resource, err)
-		os.Exit(1)
+		fail <- err
 	}
 
 	// release...
@@ -123,7 +116,7 @@ func (d *Driver) write(trans Transaction, done chan<- int) {
 }
 
 // read
-func (d *Driver) read(trans Transaction, done chan<- int) interface{} {
+func (d *Driver) read(trans Transaction, done chan<- int, fail chan<- error) interface{} {
 
 	dir := d.dir + "/" + trans.Collection
 
@@ -133,8 +126,8 @@ func (d *Driver) read(trans Transaction, done chan<- int) interface{} {
 		os.Exit(1)
 	}
 
-	if err := utils.FromJSON(b, trans.Container); err != nil {
-		panic(err)
+	if err := json.Unmarshal(b, trans.Container); err != nil {
+		fail <- err
 	}
 
 	// release...
@@ -144,14 +137,14 @@ func (d *Driver) read(trans Transaction, done chan<- int) interface{} {
 }
 
 // readAll
-func (d *Driver) readAll(trans Transaction, done chan<- int) {
+func (d *Driver) readAll(trans Transaction, done chan<- int, fail chan<- error) {
 
 	dir := d.dir + "/" + trans.Collection
 
 	//
 	files, err := ioutil.ReadDir(dir)
 
-	// if there is an error here it just means there are no evars so dont do anything
+	// an error here just means an empty collection so do nothing
 	if err != nil {
 	}
 
@@ -160,15 +153,15 @@ func (d *Driver) readAll(trans Transaction, done chan<- int) {
 	for _, file := range files {
 		b, err := ioutil.ReadFile(dir + "/" + file.Name())
 		if err != nil {
-			panic(err)
+			fail <- err
 		}
 
 		f = append(f, string(b))
 	}
 
 	//
-	if err := utils.FromJSON([]byte("["+strings.Join(f, ",")+"]"), trans.Container); err != nil {
-		panic(err)
+	if err := json.Unmarshal([]byte("["+strings.Join(f, ",")+"]"), trans.Container); err != nil {
+		fail <- err
 	}
 
 	// release...
@@ -176,14 +169,13 @@ func (d *Driver) readAll(trans Transaction, done chan<- int) {
 }
 
 // delete
-func (d *Driver) delete(trans Transaction, done chan<- int) {
+func (d *Driver) delete(trans Transaction, done chan<- int, fail chan<- error) {
 
 	dir := d.dir + "/" + trans.Collection
 
 	err := os.Remove(dir + "/" + trans.Resource)
 	if err != nil {
-		fmt.Printf("Unable to delete file %v/%v: %v", trans.Collection, trans.Resource, err)
-		os.Exit(1)
+		fail <- err
 	}
 
 	// release...
