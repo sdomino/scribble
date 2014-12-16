@@ -102,7 +102,7 @@ func (d *Driver) write(trans Transaction) error {
 	}
 
 	//
-	if err := ioutil.WriteFile(trans.ResourceID, b, 0666); err != nil {
+	if err := ioutil.WriteFile(dir + "/" + trans.ResourceID, b, 0666); err != nil {
 		return err
 	}
 
