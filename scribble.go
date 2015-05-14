@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nanobox-core/hatchet"
+	"github.com/pagodabox/golang-hatchet"
 )
 
 //
