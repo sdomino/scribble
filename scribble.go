@@ -28,8 +28,8 @@ type (
 	// Driver
 	Driver struct {
 		mutexes map[string]sync.Mutex
-		dir      string
-		log      hatchet.Logger
+		dir     string
+		log     hatchet.Logger
 	}
 
 	// Transaction represents
@@ -46,15 +46,15 @@ func New(dir string, logger hatchet.Logger) (*Driver, error) {
 	fmt.Printf("Creating database directory at '%v'...\n", dir)
 
 	//
-  if logger == nil {
-    logger = hatchet.DevNullLogger{}
-  }
+	if logger == nil {
+		logger = hatchet.DevNullLogger{}
+	}
 
 	//
 	scribble := &Driver{
-		dir: 		 dir,
+		dir:     dir,
 		mutexes: make(map[string]sync.Mutex),
-		log: 		 logger,
+		log:     logger,
 	}
 
 	//
@@ -109,7 +109,7 @@ func (d *Driver) write(trans Transaction) error {
 	}
 
 	//
-	if err := ioutil.WriteFile(dir + "/" + trans.ResourceID, b, 0666); err != nil {
+	if err := ioutil.WriteFile(dir+"/"+trans.ResourceID, b, 0666); err != nil {
 		return err
 	}
 
