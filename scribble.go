@@ -5,6 +5,10 @@
 // at http://mozilla.org/MPL/2.0/.
 //
 
+// scribble is a tiny JSON flat file store. It uses transactions that tell it what
+// actions to perform, where it is to store data, and what it is going to write
+// that data from, or read the data into. It creates a very simple database
+// structure under a specified directory
 package scribble
 
 import (
@@ -19,29 +23,29 @@ import (
 	"github.com/pagodabox/golang-hatchet"
 )
 
-//
-const Version = "0.0.1"
+const Version = "0.1.0"
 
-//
 type (
 
-	// Driver
+	// a Driver is what is used to interact with the scribble database. It runs
+	// transactions, and provides log output
 	Driver struct {
 		mutexes map[string]sync.Mutex
-		dir     string
-		log     hatchet.Logger
+		dir     string         // the directory where scribble will create the database
+		log     hatchet.Logger // the logger scirbble will log to
 	}
 
-	// Transaction represents
+	// a Transactions is what is used by a Driver to complete database operations
 	Transaction struct {
-		Action     string
-		Collection string
-		ResourceID string
-		Container  interface{}
+		Action     string      // the action for scribble to preform
+		Collection string      // the forlder for scribble to read/write to/from
+		ResourceID string      // the unique ID of the record
+		Container  interface{} // what scribble will marshal from or unmarshal into
 	}
 )
 
-// New
+// New creates a new scribble database at the desired directory location, and
+// returns a *Driver to then use for interacting with the database
 func New(dir string, logger hatchet.Logger) (*Driver, error) {
 	fmt.Printf("Creating database directory at '%v'...\n", dir)
 
@@ -57,7 +61,7 @@ func New(dir string, logger hatchet.Logger) (*Driver, error) {
 		log:     logger,
 	}
 
-	//
+	// create database
 	if err := mkDir(scribble.dir); err != nil {
 		return nil, err
 	}
@@ -66,10 +70,11 @@ func New(dir string, logger hatchet.Logger) (*Driver, error) {
 	return scribble, nil
 }
 
-// Transact
+// Transact determins the type of transactions to be run, and calls the appropriate
+// method to complete the operation
 func (d *Driver) Transact(trans Transaction) error {
 
-	//
+	// determin transaction to be run
 	switch trans.Action {
 	case "write":
 		return d.write(trans)
@@ -86,9 +91,10 @@ func (d *Driver) Transact(trans Transaction) error {
 	return nil
 }
 
-// private
-
-// write
+// write locks the database and then proceeds to write the data represented by a
+// transaction.Container. It will create a direcotry that represents the collection
+// to wich the record belongs (if it doesn't already exist), and write a file
+// (named by he transaction.ResourceID) to that directory
 func (d *Driver) write(trans Transaction) error {
 
 	mutex := d.getOrCreateMutex(trans.Collection)
@@ -103,12 +109,12 @@ func (d *Driver) write(trans Transaction) error {
 		return err
 	}
 
-	//
+	// create collection directory
 	if err := mkDir(dir); err != nil {
 		return err
 	}
 
-	//
+	// write marshaled data to a file, named by the resourceID
 	if err := ioutil.WriteFile(dir+"/"+trans.ResourceID, b, 0666); err != nil {
 		return err
 	}
@@ -118,16 +124,20 @@ func (d *Driver) write(trans Transaction) error {
 	return nil
 }
 
-// read
+// read does the opposite operation as write. Reading a record from the database
+// (named by the transaction.resourceID, found in the transaction.Collection), and
+// unmarshaling the data into the transaction.Container
 func (d *Driver) read(trans Transaction) error {
 
 	dir := d.dir + "/" + trans.Collection
 
+	// read record from database
 	b, err := ioutil.ReadFile(dir + "/" + trans.ResourceID)
 	if err != nil {
 		return err
 	}
 
+	// unmarshal data into the transaction.Container
 	if err := json.Unmarshal(b, trans.Container); err != nil {
 		return err
 	}
@@ -135,30 +145,35 @@ func (d *Driver) read(trans Transaction) error {
 	return nil
 }
 
-// readAll
+// readAll does the same operation as read, reading all the records in the specified
+// transaction.Collection
 func (d *Driver) readAll(trans Transaction) error {
 
 	dir := d.dir + "/" + trans.Collection
 
-	//
+	// read all the files in the transaction.Collection
 	files, err := ioutil.ReadDir(dir)
 
-	// an error here just means an empty collection so do nothing
 	if err != nil {
+		// an error here just means an empty collection so do nothing
 	}
 
+	// the files read from the database
 	var f []string
 
+	// iterate over each of the files, attempting to read the file. If successful
+	// append the files to the collection of read files
 	for _, file := range files {
 		b, err := ioutil.ReadFile(dir + "/" + file.Name())
 		if err != nil {
 			return err
 		}
 
+		// append read file
 		f = append(f, string(b))
 	}
 
-	//
+	// unmarhsal the read files as a comma delimeted byte array
 	if err := json.Unmarshal([]byte("["+strings.Join(f, ",")+"]"), trans.Container); err != nil {
 		return err
 	}
@@ -166,7 +181,8 @@ func (d *Driver) readAll(trans Transaction) error {
 	return nil
 }
 
-// delete
+// delete locks that database and then proceeds to remove the record (specified by
+// transaction.ResourceID) from the collection
 func (d *Driver) delete(trans Transaction) error {
 
 	mutex := d.getOrCreateMutex(trans.Collection)
@@ -174,6 +190,7 @@ func (d *Driver) delete(trans Transaction) error {
 
 	dir := d.dir + "/" + trans.Collection
 
+	// remove record from database
 	err := os.Remove(dir + "/" + trans.ResourceID)
 	if err != nil {
 		return err
@@ -186,7 +203,8 @@ func (d *Driver) delete(trans Transaction) error {
 
 // helpers
 
-// getOrCreateMutex
+// getOrCreateMutex creates a new collection specific mutex any time a collection
+// is being modfied to avoid unsafe operations
 func (d *Driver) getOrCreateMutex(collection string) sync.Mutex {
 
 	c, ok := d.mutexes[collection]
@@ -200,7 +218,8 @@ func (d *Driver) getOrCreateMutex(collection string) sync.Mutex {
 	return c
 }
 
-// mkDir
+// mkDir is a simple wrapper that attempts to make a directory at a specified
+// location
 func mkDir(d string) error {
 
 	//
