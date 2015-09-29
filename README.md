@@ -6,7 +6,7 @@ scribble
 
 ### Installation
 
-Install using `go get github.com/pagodabox/golang-scribble`.
+Install using `go get github.com/nanobox-io/golang-scribble`.
 
 
 ### Usage
@@ -45,8 +45,8 @@ if err := database.Transact(t); err != nil {
 }
 ```
 
-For an example of a qualified logger see [here](http://godoc.org/github.com/pagodabox/golang-hatchet).
+For an example of a qualified logger see [here](http://godoc.org/github.com/nanobox-io/golang-hatchet).
 
 
 ### Documentation
-Complete documentation is available on [godoc](http://godoc.org/github.com/pagodabox/golang-scribble).
+Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/golang-scribble).
