@@ -20,7 +20,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/pagodabox/golang-hatchet"
+	"github.com/nanobox-io/golang-hatchet"
 )
 
 const Version = "0.1.0"
