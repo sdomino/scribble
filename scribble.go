@@ -114,14 +114,20 @@ func (d *Driver) write(trans Transaction) error {
 		return err
 	}
 
+	finalPath := dir + "/" + trans.ResourceID + ".json"
+	tmpPath := finalPath + "~"
+
 	// write marshaled data to a file, named by the resourceID
-	if err := ioutil.WriteFile(dir+"/"+trans.ResourceID, b, 0666); err != nil {
+	if err := ioutil.WriteFile(tmpPath, b, 0666); err != nil {
 		return err
 	}
 
+	// move final file into place
+	err = os.Rename(tmpPath, finalPath)
+
 	mutex.Unlock()
 
-	return nil
+	return err
 }
 
 // read does the opposite operation as write. Reading a record from the database
