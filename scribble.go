@@ -135,7 +135,7 @@ func (d *Driver) read(trans Transaction) error {
 	dir := d.dir + "/" + trans.Collection
 
 	// read record from database
-	b, err := ioutil.ReadFile(dir + "/" + trans.ResourceID)
+	b, err := ioutil.ReadFile(dir + "/" + trans.ResourceID + ".json")
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (d *Driver) delete(trans Transaction) error {
 	dir := d.dir + "/" + trans.Collection
 
 	// remove record from database
-	return os.Remove(dir + "/" + trans.ResourceID)
+	return os.Remove(dir + "/" + trans.ResourceID + ".json")
 }
 
 // helpers
