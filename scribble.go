@@ -119,7 +119,11 @@ func (d *Driver) write(trans Transaction) error {
 	tmpPath := finalPath + "~"
 
 	// write marshaled data to a file, named by the resourceID
+<<<<<<< Updated upstream
 	if err := ioutil.WriteFile(tmpPath, b, 0666); err != nil {
+=======
+	if err := ioutil.WriteFile(dir+"/"+trans.ResourceID, b, 0644); err != nil {
+>>>>>>> Stashed changes
 		return err
 	}
 
