@@ -37,7 +37,7 @@ if err != nil {
 record := Record{}
 
 // create a new transaction for scribble to run
-t := scribble.Transaction{Action: "read", Collection: "records", ResourceID: "<UniqueID>", Container: &record}
+t := scribble.Transaction{Action: scribble.READ, Collection: "records", ResourceID: "<UniqueID>", Container: &record}
 
 // have scribble attempt to run the transaction
 if err := database.Transact(t); err != nil {

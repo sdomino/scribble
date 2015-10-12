@@ -37,11 +37,19 @@ type (
 
 	// a Transactions is what is used by a Driver to complete database operations
 	Transaction struct {
-		Action     string      // the action for scribble to preform
+		Action     int         // the action for scribble to preform
 		Collection string      // the forlder for scribble to read/write to/from
 		ResourceID string      // the unique ID of the record
 		Container  interface{} // what scribble will marshal from or unmarshal into
 	}
+)
+
+//
+const (
+	WRITE = iota
+	READ
+	READALL
+	DELETE
 )
 
 // New creates a new scribble database at the desired directory location, and
@@ -72,23 +80,23 @@ func New(dir string, logger hatchet.Logger) (*Driver, error) {
 
 // Transact determins the type of transactions to be run, and calls the appropriate
 // method to complete the operation
-func (d *Driver) Transact(trans Transaction) error {
+func (d *Driver) Transact(trans Transaction) (err error) {
 
 	// determin transaction to be run
 	switch trans.Action {
-	case "write":
+	case WRITE:
 		return d.write(trans)
-	case "read":
+	case READ:
 		return d.read(trans)
-	case "readall":
+	case READALL:
 		return d.readAll(trans)
-	case "delete":
+	case DELETE:
 		return d.delete(trans)
 	default:
 		return errors.New(fmt.Sprintf("Unsupported action %+v", trans.Action))
 	}
 
-	return nil
+	return
 }
 
 // write locks the database and then proceeds to write the data represented by a
