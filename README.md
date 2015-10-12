@@ -48,9 +48,17 @@ if err := database.Transact(t); err != nil {
 For an example of a qualified logger see [here](http://godoc.org/github.com/nanobox-io/golang-hatchet).
 
 
-### TODO/Doing
+## Documentation
+Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/golang-scribble).
+
+
+## Todo/Doing
 - Tests!
 
 
-### Documentation
-Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/golang-scribble).
+## Contributing
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Added some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request
