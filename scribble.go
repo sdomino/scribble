@@ -43,28 +43,23 @@ func New(dir string, logger hatchet.Logger) (*Driver, error) {
 	}
 
 	//
-	scribble := &Driver{
+	d := &Driver{
 		dir:     dir,
 		mutexes: make(map[string]sync.Mutex),
 		log:     logger,
 	}
 
 	// create database
-	if err := mkDir(scribble.dir); err != nil {
+	if err := mkDir(d.dir); err != nil {
 		return nil, err
 	}
 
 	//
-	return scribble, nil
+	return d, nil
 }
 
 // Write locks the database and attempts to write the record to the database under
 // the [collection] specified with the [resource] name given
-//
-// Example:
-//
-// // write [fish] to database
-// Write("/fish/onefish", fish{name:"onefish"})
 func (d *Driver) Write(collection, resource string, v interface{}) error {
 
 	mutex := d.getOrCreateMutex(collection)
@@ -72,7 +67,7 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 	defer mutex.Unlock()
 
 	//
-	dir := d.dir + "/" + collection
+	dir := d.dir + collection
 
 	//
 	b, err := json.MarshalIndent(v, "", "\t")
@@ -98,17 +93,9 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 }
 
 // Read a record from the database
-//
-// Example:
-//
-// // read a single fish
-// Read("/fish/twofish", &fish)
-//
-// // read all fish
-// Read("/fish", &fish)
 func (d *Driver) Read(path string, v interface{}) error {
 
-	dir := d.dir + "/" + path
+	dir := d.dir + path
 
 	//
 	fi, err := os.Stat(path)
@@ -147,6 +134,7 @@ func (d *Driver) Read(path string, v interface{}) error {
 
 		// if the path is a file, attempt to read the single file
 	case !fi.Mode().IsDir():
+
 		// read record from database
 		b, err := ioutil.ReadFile(dir + ".json")
 		if err != nil {
@@ -162,14 +150,6 @@ func (d *Driver) Read(path string, v interface{}) error {
 
 // Delete locks that database and then attempts to remove the collection/resource
 // specified by [path]
-//
-// Example:
-//
-// // delete the fish 'redfish.json'
-// Delete("/fish/redfish")
-//
-// // delete the fish collection
-// Delete("/fish")
 func (d *Driver) Delete(path string) error {
 
 	mutex := d.getOrCreateMutex(path)
@@ -185,11 +165,11 @@ func (d *Driver) Delete(path string) error {
 	switch {
 	// remove the collection from database
 	case fi.Mode().IsDir():
-		return os.Remove(d.dir + "/" + path)
+		return os.Remove(d.dir + path)
 
 		// remove the record from database
 	default:
-		return os.Remove(d.dir + "/" + path + ".json")
+		return os.Remove(d.dir + path + ".json")
 	}
 }
 

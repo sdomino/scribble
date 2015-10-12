@@ -21,13 +21,13 @@ if err != nil {
 
 // Write a fish to the database
 fish := Fish{}
-if err := db.Write("fish", "onefish", fish); err != nil {
+if err := db.Write("/fish", "onefish", fish); err != nil {
 
 }
 
 // Read all fish from the database
 fish := []Fish{}
-if err := db.Read("fish", fish); err != nil {
+if err := db.Read("/fish", fish); err != nil {
 
 }
 
