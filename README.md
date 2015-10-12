@@ -48,5 +48,9 @@ if err := database.Transact(t); err != nil {
 For an example of a qualified logger see [here](http://godoc.org/github.com/nanobox-io/golang-hatchet).
 
 
+### TODO/Doing
+- Tests!
+
+
 ### Documentation
 Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/golang-scribble).
