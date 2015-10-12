@@ -95,21 +95,16 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 // Read a record from the database
 func (d *Driver) Read(path string, v interface{}) error {
 
-	dir := d.dir + path
-
 	//
-	fi, err := os.Stat(path)
-	if err != nil {
-		return err
-	}
+	m, p := modePath(d.dir + path)
 
-	switch {
+	switch m {
 
 	// if the path is a directory, attempt to read all entries into v
-	case fi.Mode().IsDir():
+	case "dir":
 
 		// read all the files in the transaction.Collection
-		files, err := ioutil.ReadDir(dir)
+		files, err := ioutil.ReadDir(p)
 		if err != nil {
 			// an error here just means the collection is either empty or doesn't exist
 		}
@@ -120,7 +115,7 @@ func (d *Driver) Read(path string, v interface{}) error {
 		// iterate over each of the files, attempting to read the file. If successful
 		// append the files to the collection of read files
 		for _, file := range files {
-			b, err := ioutil.ReadFile(dir + "/" + file.Name())
+			b, err := ioutil.ReadFile(p + "/" + file.Name())
 			if err != nil {
 				return err
 			}
@@ -133,10 +128,10 @@ func (d *Driver) Read(path string, v interface{}) error {
 		return json.Unmarshal([]byte("["+strings.Join(f, ",")+"]"), v)
 
 		// if the path is a file, attempt to read the single file
-	case !fi.Mode().IsDir():
+	case "file":
 
 		// read record from database
-		b, err := ioutil.ReadFile(dir + ".json")
+		b, err := ioutil.ReadFile(p)
 		if err != nil {
 			return err
 		}
@@ -156,21 +151,28 @@ func (d *Driver) Delete(path string) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	// stat the file to determine if it is a file or dir
-	fi, err := os.Stat(path)
-	if err != nil {
-		return err
+	//
+	_, p := modePath(d.dir + path)
+
+	//
+	return os.RemoveAll(p)
+}
+
+//
+func modePath(path string) (m, p string) {
+
+	// check for dir
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+
+		// check for file
+		if _, err := os.Stat(path + ".json"); os.IsNotExist(err) {
+			fmt.Printf("No file or directory found at '%v'\n", path+".json")
+		}
+
+		return "file", path + ".json"
 	}
 
-	switch {
-	// remove the collection from database
-	case fi.Mode().IsDir():
-		return os.Remove(d.dir + path)
-
-		// remove the record from database
-	default:
-		return os.Remove(d.dir + path + ".json")
-	}
+	return "dir", path
 }
 
 // getOrCreateMutex creates a new collection specific mutex any time a collection
