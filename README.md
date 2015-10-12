@@ -56,9 +56,9 @@ Complete documentation is available on [godoc](http://godoc.org/github.com/nanob
 
 
 ## Todo/Doing
-- Tests!
 - Better support for sub collections
 - More methods to allow different types of reads/writes
+- More tests (you can never have enough)
 
 
 ## Contributing
