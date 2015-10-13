@@ -40,12 +40,11 @@ type (
 func New(dir string, logger hatchet.Logger) (*Driver, error) {
 	dir = filepath.Clean(dir)
 
-	fmt.Printf("Creating database directory at '%v'...\n", dir)
-
-	//
 	if logger == nil {
 		logger = hatchet.DevNullLogger{}
 	}
+
+	logger.Info("Creating database directory at '%v'...\n", dir)
 
 	//
 	d := &Driver{
@@ -218,8 +217,10 @@ func (d *Driver) getOrCreateMutex(collection string) sync.Mutex {
 	if !ok {
 
 		d.maplock.Lock()
-		c = sync.Mutex{}
-		d.mutexes[collection] = c
+		if c, ok = d.mutexes[collection]; !ok {
+			c = sync.Mutex{}
+			d.mutexes[collection] = c
+		}
 		d.maplock.Unlock()
 	}
 
