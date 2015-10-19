@@ -13,13 +13,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/nanobox-io/golang-hatchet"
 )
 
-const Version = "0.5.0"
+const Version = "1.0.0"
 
 type (
 
@@ -35,12 +36,16 @@ type (
 // New creates a new scribble database at the desired directory location, and
 // returns a *Driver to then use for interacting with the database
 func New(dir string, logger hatchet.Logger) (*Driver, error) {
-	fmt.Printf("Creating database directory at '%v'...\n", dir)
+
+	//
+	dir = filepath.Clean(dir)
 
 	//
 	if logger == nil {
 		logger = hatchet.DevNullLogger{}
 	}
+
+	logger.Info("Creating database directory at '%v'...\n", dir)
 
 	//
 	d := &Driver{
@@ -58,56 +63,25 @@ func New(dir string, logger hatchet.Logger) (*Driver, error) {
 	return d, nil
 }
 
-// Write locks the database and attempts to write the record to the database under
-// the [collection] specified with the [resource] name given
-func (d *Driver) Write(collection, resource string, v interface{}) error {
-
-	mutex := d.getOrCreateMutex(collection)
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	//
-	dir := d.dir + collection
-
-	//
-	b, err := json.MarshalIndent(v, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	// create collection directory
-	if err := mkDir(dir); err != nil {
-		return err
-	}
-
-	finalPath := dir + "/" + resource + ".json"
-	tmpPath := finalPath + "~"
-
-	// write marshaled data to the temp file
-	if err := ioutil.WriteFile(tmpPath, b, 0644); err != nil {
-		return err
-	}
-
-	// move final file into place
-	return os.Rename(tmpPath, finalPath)
-}
-
 // Read a record from the database
 func (d *Driver) Read(path string, v interface{}) error {
 
 	//
-	m, p := modePath(d.dir + path)
+	dir := filepath.Join(d.dir, path)
 
-	switch m {
+	//
+	switch fi, err := stat(dir); {
+
+	// if fi is nil or error is not nil return
+	case fi == nil, err != nil:
+		return fmt.Errorf("Unable to find file or directory named %v\n", path)
 
 	// if the path is a directory, attempt to read all entries into v
-	case "dir":
+	case fi.Mode().IsDir():
 
-		// read all the files in the transaction.Collection
-		files, err := ioutil.ReadDir(p)
-		if err != nil {
-			// an error here just means the collection is either empty or doesn't exist
-		}
+		// read all the files in the transaction.Collection; an error here just means
+		// the collection is either empty or doesn't exist
+		files, _ := ioutil.ReadDir(dir)
 
 		// the files read from the database
 		var f []string
@@ -115,7 +89,7 @@ func (d *Driver) Read(path string, v interface{}) error {
 		// iterate over each of the files, attempting to read the file. If successful
 		// append the files to the collection of read files
 		for _, file := range files {
-			b, err := ioutil.ReadFile(p + "/" + file.Name())
+			b, err := ioutil.ReadFile(filepath.Join(dir, file.Name()))
 			if err != nil {
 				return err
 			}
@@ -128,51 +102,94 @@ func (d *Driver) Read(path string, v interface{}) error {
 		return json.Unmarshal([]byte("["+strings.Join(f, ",")+"]"), v)
 
 		// if the path is a file, attempt to read the single file
-	case "file":
+	case fi.Mode().IsRegular():
 
 		// read record from database
-		b, err := ioutil.ReadFile(p)
+		b, err := ioutil.ReadFile(dir + ".json")
 		if err != nil {
 			return err
 		}
 
-		// unmarshal data into the transaction.Container
+		// unmarshal data
 		return json.Unmarshal(b, &v)
 	}
 
 	return nil
 }
 
+// Write locks the database and attempts to write the record to the database under
+// the [collection] specified with the [resource] name given
+func (d *Driver) Write(collection, resource string, v interface{}) error {
+
+	mutex := d.getOrCreateMutex(collection)
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	//
+	dir := filepath.Join(d.dir, collection)
+
+	//
+	b, err := json.MarshalIndent(v, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	// create collection directory
+	if err := mkDir(dir); err != nil {
+		return err
+	}
+
+	finalPath := filepath.Join(dir, resource+".json")
+	tmpPath := finalPath + "~"
+
+	// write marshaled data to the temp file
+	if err := ioutil.WriteFile(tmpPath, b, 0644); err != nil {
+		return err
+	}
+
+	// move final file into place
+	return os.Rename(tmpPath, finalPath)
+}
+
 // Delete locks that database and then attempts to remove the collection/resource
 // specified by [path]
 func (d *Driver) Delete(path string) error {
 
+	//
 	mutex := d.getOrCreateMutex(path)
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	//
-	_, p := modePath(d.dir + path)
+	dir := filepath.Join(d.dir, path)
 
-	//
-	return os.RemoveAll(p)
+	switch fi, err := stat(dir); {
+
+	// if fi is nil or error is not nil return
+	case fi == nil, err != nil:
+		return fmt.Errorf("Unable to find file or directory named %v\n", path)
+
+	// remove directory and all contents
+	case fi.Mode().IsDir():
+		return os.RemoveAll(dir)
+
+	// remove file
+	case fi.Mode().IsRegular():
+		return os.RemoveAll(dir + ".json")
+	}
+
+	return nil
 }
 
 //
-func modePath(path string) (m, p string) {
+func stat(path string) (fi os.FileInfo, err error) {
 
-	// check for dir
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-
-		// check for file
-		if _, err := os.Stat(path + ".json"); os.IsNotExist(err) {
-			fmt.Printf("No file or directory found at '%v'\n", path+".json")
-		}
-
-		return "file", path + ".json"
+	// check for dir, if path isn't a directory check to see if it's a file
+	if fi, err = os.Stat(path); os.IsNotExist(err) {
+		fi, err = os.Stat(path + ".json")
 	}
 
-	return "dir", path
+	return
 }
 
 // getOrCreateMutex creates a new collection specific mutex any time a collection

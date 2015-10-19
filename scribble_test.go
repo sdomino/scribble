@@ -65,6 +65,7 @@ func TestNew(t *testing.T) {
 //
 func TestWrite(t *testing.T) {
 	createFriend(t)
+	teardown()
 }
 
 //
@@ -78,6 +79,18 @@ func TestRead(t *testing.T) {
 	if friend0.Name == "" {
 		t.Error("Expected friend, have none")
 	}
+
+	teardown()
+}
+
+//
+func TestReadEmpty(t *testing.T) {
+
+	if err := db.Read(friendsPath+"/friend1", &friend0); err == nil {
+		t.Error("Expected nothing, found friend")
+	}
+
+	teardown()
 }
 
 //
@@ -91,6 +104,17 @@ func TestReadall(t *testing.T) {
 
 	if len(friends) <= 0 {
 		t.Error("Expected friends, have none")
+	}
+
+	teardown()
+}
+
+//
+func TestReadallEmpty(t *testing.T) {
+
+	friends := []Friend{}
+	if err := db.Read(friendsPath, &friends); err == nil {
+		t.Error("Expected nothing, found friends")
 	}
 
 	teardown()
