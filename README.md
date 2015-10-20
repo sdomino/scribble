@@ -56,6 +56,8 @@ Complete documentation is available on [godoc](http://godoc.org/github.com/nanob
 
 
 ## Todo/Doing
+- Support for windows
+- Better support for concurrency
 - Better support for sub collections
 - More methods to allow different types of reads/writes
 - More tests (you can never have enough)

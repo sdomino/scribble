@@ -27,6 +27,7 @@ type (
 	// a Driver is what is used to interact with the scribble database. It runs
 	// transactions, and provides log output
 	Driver struct {
+		mutex   sync.Mutex
 		mutexes map[string]sync.Mutex
 		dir     string         // the directory where scribble will create the database
 		log     hatchet.Logger // the logger scribble will log to
@@ -196,15 +197,18 @@ func stat(path string) (fi os.FileInfo, err error) {
 // is being modfied to avoid unsafe operations
 func (d *Driver) getOrCreateMutex(collection string) sync.Mutex {
 
-	c, ok := d.mutexes[collection]
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	m, ok := d.mutexes[collection]
 
 	// if the mutex doesn't exist make it
 	if !ok {
-		c = sync.Mutex{}
-		d.mutexes[collection] = c
+		m = sync.Mutex{}
+		d.mutexes[collection] = m
 	}
 
-	return c
+	return m
 }
 
 // mkDir is a simple wrapper that attempts to make a directory at a specified
