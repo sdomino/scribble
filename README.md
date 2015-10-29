@@ -21,29 +21,29 @@ if err != nil {
 
 // Write a fish to the database
 fish := Fish{}
-if err := db.Write("/fish", "onefish", fish); err != nil {
+if err := db.Write("fish", "onefish", fish); err != nil {
 
 }
 
 // Read all fish from the database
 fish := []Fish{}
-if err := db.Read("/fish", fish); err != nil {
+if err := db.Read("fish", fish); err != nil {
 
 }
 
 // Read a fish from the database
 fish := Fish{}
-if err := db.Read("/fish/onefish", fish); err != nil {
+if err := db.Read("fish", "onefish", fish); err != nil {
 
 }
 
 // Delete all fish from the database
-if err := db.Delete("/fish"); err != nil {
+if err := db.Delete("fish"); err != nil {
 
 }
 
 // Delete a fish from the database
-if err := db.Delete("/fish/onefish"); err != nil {
+if err := db.Delete("fish", "onefish"); err != nil {
 
 }
 ```

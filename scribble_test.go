@@ -72,7 +72,7 @@ func TestWrite(t *testing.T) {
 func TestRead(t *testing.T) {
 	createFriend(t)
 
-	if err := db.Read(friendsPath+"/friend1", &friend0); err != nil {
+	if err := db.Read(friendsPath, "friend1", &friend0); err != nil {
 		t.Error("Failed to read", err)
 	}
 
@@ -86,7 +86,7 @@ func TestRead(t *testing.T) {
 //
 func TestReadEmpty(t *testing.T) {
 
-	if err := db.Read(friendsPath+"/friend1", &friend0); err == nil {
+	if err := db.Read(friendsPath, "friend1", &friend0); err == nil {
 		t.Error("Expected nothing, found friend")
 	}
 
@@ -98,7 +98,7 @@ func TestReadall(t *testing.T) {
 	createFriends(t)
 
 	friends := []Friend{}
-	if err := db.Read(friendsPath, &friends); err != nil {
+	if err := db.Read(friendsPath, "", &friends); err != nil {
 		t.Error("Failed to read", err)
 	}
 
@@ -113,7 +113,7 @@ func TestReadall(t *testing.T) {
 func TestReadallEmpty(t *testing.T) {
 
 	friends := []Friend{}
-	if err := db.Read(friendsPath, &friends); err == nil {
+	if err := db.Read(friendsPath, "", &friends); err == nil {
 		t.Error("Expected nothing, found friends")
 	}
 
@@ -124,7 +124,7 @@ func TestReadallEmpty(t *testing.T) {
 func TestDelete(t *testing.T) {
 	createFriend(t)
 
-	if err := db.Delete(friendsPath + "/friend1"); err != nil {
+	if err := db.Delete(friendsPath, "friend1"); err != nil {
 		t.Error("Failed to delete", err)
 	}
 
@@ -139,7 +139,7 @@ func TestDelete(t *testing.T) {
 func TestDeleteall(t *testing.T) {
 	createFriends(t)
 
-	if err := db.Delete(friendsPath); err != nil {
+	if err := db.Delete(friendsPath, ""); err != nil {
 		t.Error("Failed to delete ", err)
 	}
 

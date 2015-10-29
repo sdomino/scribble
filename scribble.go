@@ -65,9 +65,10 @@ func New(dir string, logger hatchet.Logger) (*Driver, error) {
 }
 
 // Read a record from the database
-func (d *Driver) Read(path string, v interface{}) error {
+func (d *Driver) Read(collection, resource string, v interface{}) error {
 
 	//
+	path := filepath.Join(collection, resource)
 	dir := filepath.Join(d.dir, path)
 
 	//
@@ -154,8 +155,8 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 
 // Delete locks that database and then attempts to remove the collection/resource
 // specified by [path]
-func (d *Driver) Delete(path string) error {
-
+func (d *Driver) Delete(collection, resource string) error {
+	path := filepath.Join(collection, resource)
 	//
 	mutex := d.getOrCreateMutex(path)
 	mutex.Lock()
