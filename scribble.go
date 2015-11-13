@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-const Version = "1.0.2"
+const Version = "1.0.3"
 
 type (
 
@@ -214,14 +214,9 @@ func (d *Driver) getOrCreateMutex(collection string) sync.Mutex {
 func mkDir(d string) (err error) {
 
 	//
-	dir, _ := os.Stat(d)
-
-	switch {
-	case dir == nil:
-		err = os.MkdirAll(d, 0755)
-	case !dir.IsDir():
-		err = os.ErrInvalid
+	if _, err = os.Stat(d); err != nil {
+		return
 	}
 
-	return
+	return os.MkdirAll(d, 0755)
 }
