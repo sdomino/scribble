@@ -11,57 +11,61 @@ package scribble
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jcelliott/lumber"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
-
-	"github.com/nanobox-io/golang-hatchet"
 )
 
-const Version = "1.0.1"
+const Version = "1.0.2"
 
 type (
+
+	//
+	Logger interface {
+		Fatal(string, ...interface{})
+		Error(string, ...interface{})
+		Warn(string, ...interface{})
+		Info(string, ...interface{})
+		Debug(string, ...interface{})
+		Trace(string, ...interface{})
+	}
 
 	// a Driver is what is used to interact with the scribble database. It runs
 	// transactions, and provides log output
 	Driver struct {
 		mutex   sync.Mutex
 		mutexes map[string]sync.Mutex
-		dir     string         // the directory where scribble will create the database
-		log     hatchet.Logger // the logger scribble will log to
+		dir     string // the directory where scribble will create the database
+		log     Logger // the logger scribble will log to
 	}
 )
 
 // New creates a new scribble database at the desired directory location, and
 // returns a *Driver to then use for interacting with the database
-func New(dir string, logger hatchet.Logger) (*Driver, error) {
+func New(dir string, logger Logger) (driver *Driver, err error) {
 
 	//
 	dir = filepath.Clean(dir)
 
 	//
 	if logger == nil {
-		logger = hatchet.DevNullLogger{}
+		logger = lumber.NewConsoleLogger(lumber.INFO)
 	}
 
-	logger.Info("Creating database directory at '%v'...\n", dir)
+	logger.Info("Creating scribble database at '%v'...\n", dir)
 
 	//
-	d := &Driver{
+	driver = &Driver{
 		dir:     dir,
 		mutexes: make(map[string]sync.Mutex),
 		log:     logger,
 	}
 
 	// create database
-	if err := mkDir(d.dir); err != nil {
-		return nil, err
-	}
-
-	//
-	return d, nil
+	return driver, mkDir(dir)
 }
 
 // Read a record from the database
