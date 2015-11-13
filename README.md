@@ -1,7 +1,7 @@
 scribble
 --------
 
-`golang-scribble` (Golang package: `scribble`) is a tiny JSON flat file store
+A tiny JSON database in Golang
 
 
 ### Installation
