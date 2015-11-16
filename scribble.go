@@ -42,6 +42,13 @@ func New(dir string, logger Logger) (driver *Driver, err error) {
 	//
 	dir = filepath.Clean(dir)
 
+	// ensure the database location doesn't already exist (we don't want to overwrite
+	// any existing files/database)
+	if _, err := os.Stat(dir); err == nil {
+		fmt.Printf("Unable to create database, '%s' already exists. Please specify a different location.\n", dir)
+		os.Exit(1)
+	}
+
 	//
 	if logger == nil {
 		logger = lumber.NewConsoleLogger(lumber.INFO)
@@ -135,7 +142,7 @@ func (d *Driver) Read(collection, resource string, v interface{}) error {
 }
 
 // ReadAll records from a collection; this is returned as a slice of strings because
-// there is no way of knowing what type they record is
+// there is no way of knowing what type the record is.
 func (d *Driver) ReadAll(collection string) ([]string, error) {
 
 	// ensure there is a collection to read
