@@ -6,146 +6,164 @@ import (
 )
 
 //
-type Friend struct {
-	Name string `json:"name"`
+type Fish struct {
+	Type string `json:"type"`
 }
 
 //
 var (
-	db          *Driver
-	testRoot    = "./test_db"
-	friendsPath = "/friends"
-	friend0     = Friend{}
-	friend1     = Friend{Name: "wocket"}
-	friend2     = Friend{Name: "wasket"}
+	db         *Driver
+	database   = "./school"
+	collection = "fish"
+	onefish    = Fish{}
+	twofish    = Fish{}
+	redfish    = Fish{Type: "red"}
+	bluefish   = Fish{Type: "blue"}
 )
 
 //
-func init() {
-	startup()
-}
+func TestMain(m *testing.M) {
 
-//
-func startup() {
-	db, _ = New(testRoot, nil)
-}
+	var err error
 
-//
-func teardown() {
-	os.RemoveAll(testRoot)
-}
-
-//
-func createFriend(t *testing.T) {
-	if err := db.Write(friendsPath, "friend1", friend1); err != nil {
-		t.Error("Failed to write", err)
-	}
-}
-
-//
-func createFriends(t *testing.T) {
-	if err := db.Write(friendsPath, "friend1", friend1); err != nil {
-		t.Error("Failed to write", err)
+	// create a new scribble
+	if db, err = New(database, nil); err != nil {
+		panic(err)
 	}
 
-	if err := db.Write(friendsPath, "friend2", friend2); err != nil {
-		t.Error("Failed to write", err)
-	}
+	// run
+	code := m.Run()
+
+	// cleanup
+	os.RemoveAll(database)
+
+	// exit
+	os.Exit(code)
 }
 
 //
 func TestNew(t *testing.T) {
-	if _, err := os.Stat(testRoot); os.IsNotExist(err) {
-		t.Error("Expected file, got none", err)
+	if _, err := os.Stat(database); err != nil {
+		t.Error("Expected file, got none")
 	}
-
-	teardown()
 }
 
 //
-func TestWrite(t *testing.T) {
-	createFriend(t)
-	teardown()
-}
+func TestWriteAndRead(t *testing.T) {
 
-//
-func TestRead(t *testing.T) {
-	createFriend(t)
-
-	if err := db.Read(friendsPath, "friend1", &friend0); err != nil {
-		t.Error("Failed to read", err)
+	// add fish to database
+	if err := db.Write(collection, "redfish", redfish); err != nil {
+		t.Error("Create fish failed: ", err.Error())
 	}
 
-	if friend0.Name == "" {
-		t.Error("Expected friend, have none")
+	// read fish from database
+	if err := db.Read(collection, "redfish", &onefish); err != nil {
+		t.Error("Failed to read: ", err.Error())
 	}
 
-	teardown()
-}
-
-//
-func TestReadEmpty(t *testing.T) {
-
-	if err := db.Read(friendsPath, "friend1", &friend0); err == nil {
-		t.Error("Expected nothing, found friend")
+	//
+	if onefish.Type != "red" {
+		t.Error("Expected red fish, got: ", onefish.Type)
 	}
 
-	teardown()
+	destroySchool()
 }
 
 //
 func TestReadall(t *testing.T) {
-	createFriends(t)
+	createSchool()
 
-	friends := []Friend{}
-	if err := db.Read(friendsPath, "", &friends); err != nil {
-		t.Error("Failed to read", err)
+	fish, err := db.ReadAll(collection)
+	if err != nil {
+		t.Error("Failed to read: ", err.Error())
 	}
 
-	if len(friends) <= 0 {
-		t.Error("Expected friends, have none")
+	if len(fish) <= 0 {
+		t.Error("Expected some fish, have none")
 	}
 
-	teardown()
+	destroySchool()
 }
 
 //
-func TestReadallEmpty(t *testing.T) {
+func TestWriteAndReadEmpty(t *testing.T) {
 
-	friends := []Friend{}
-	if err := db.Read(friendsPath, "", &friends); err == nil {
-		t.Error("Expected nothing, found friends")
+	// create a fish with no home
+	if err := db.Write("", "redfish", redfish); err == nil {
+		t.Error("Allowed write of empty resource", err.Error())
 	}
 
-	teardown()
+	// create a home with no fish
+	if err := db.Write(collection, "", redfish); err == nil {
+		t.Error("Allowed write of empty resource", err.Error())
+	}
+
+	// no place to read
+	if err := db.Read("", "redfish", onefish); err == nil {
+		t.Error("Allowed read of empty resource", err.Error())
+	}
+
+	destroySchool()
 }
 
 //
 func TestDelete(t *testing.T) {
-	createFriend(t)
 
-	if err := db.Delete(friendsPath, "friend1"); err != nil {
-		t.Error("Failed to delete", err)
+	// add fish to database
+	if err := db.Write(collection, "redfish", redfish); err != nil {
+		t.Error("Create fish failed: ", err.Error())
 	}
 
-	if fi, err := os.Stat(friendsPath + "/friend1"); fi != nil {
-		t.Error("Expected nothing, have friends", err)
+	// delete the fish
+	if err := db.Delete(collection, "redfish"); err != nil {
+		t.Error("Failed to delete: ", err.Error())
 	}
 
-	teardown()
+	// read fish from database
+	if err := db.Read(collection, "redfish", &onefish); err == nil {
+		t.Error("Expected nothing, got fish")
+	}
+
+	destroySchool()
 }
 
 //
 func TestDeleteall(t *testing.T) {
-	createFriends(t)
+	createSchool()
 
-	if err := db.Delete(friendsPath, ""); err != nil {
-		t.Error("Failed to delete ", err)
+	if err := db.Delete(collection, ""); err != nil {
+		t.Error("Failed to delete: ", err.Error())
 	}
 
-	if fi, err := os.Stat(friendsPath); fi != nil {
-		t.Error("Expected nothing, have friends", err)
+	if _, err := os.Stat(collection); err == nil {
+		t.Error("Expected nothing, have fish")
 	}
 
-	teardown()
+	destroySchool()
+}
+
+//
+func createFish(fish Fish) error {
+	return db.Write(collection, fish.Type, fish)
+}
+
+//
+func createSchool() error {
+	for _, f := range []Fish{Fish{Type: "red"}, Fish{Type: "blue"}} {
+		if err := db.Write(collection, f.Type, f); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+//
+func destroyFish(name string) error {
+	return db.Delete(collection, name)
+}
+
+//
+func destroySchool() error {
+	return db.Delete(collection, "")
 }
