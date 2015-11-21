@@ -35,10 +35,19 @@ type (
 	}
 )
 
+type Options struct {
+	Logger
+}
+
 // New creates a new scribble database at the desired directory location, and
 // returns a *Driver to then use for interacting with the database
-func New(dir string, logger Logger) (driver *Driver, err error) {
-
+func New(dir string, opt *Options) (driver *Driver, err error) {
+	var options Options
+	if opt == nil {
+		options = Options{}
+	} else {
+		options = *opt
+	}
 	//
 	dir = filepath.Clean(dir)
 
@@ -50,18 +59,18 @@ func New(dir string, logger Logger) (driver *Driver, err error) {
 	}
 
 	//
-	if logger == nil {
-		logger = lumber.NewConsoleLogger(lumber.INFO)
+	if options.Logger == nil {
+		options.Logger = lumber.NewConsoleLogger(lumber.INFO)
 	}
 
 	//
 	driver = &Driver{
 		dir:     dir,
 		mutexes: make(map[string]sync.Mutex),
-		log:     logger,
+		log:     options.Logger,
 	}
 
-	logger.Info("Creating scribble database at '%v'...\n", dir)
+	options.Logger.Info("Creating scribble database at '%v'...\n", dir)
 
 	// create database
 	return driver, os.MkdirAll(dir, 0755)
