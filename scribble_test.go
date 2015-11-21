@@ -48,6 +48,14 @@ func TestNew(t *testing.T) {
 	}
 }
 
+// Checking opening exist dir
+func TestNewExist(t *testing.T) {
+	var err error
+	if db, err = New(database, &Options{ExistDir: true}); err != nil {
+		panic(err)
+	}
+}
+
 //
 func TestWriteAndRead(t *testing.T) {
 
