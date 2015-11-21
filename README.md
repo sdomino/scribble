@@ -13,8 +13,8 @@ Install using `go get github.com/nanobox-io/golang-scribble`.
 
 ```go
 // a new scribble driver, providing the directory where it will be writing to,
-// and a qualified logger to which it can send any output.
-db, err := scribble.New(dir, logger)
+// and a qualified logger if desired
+db, err := scribble.New(dir, nil)
 if err != nil {
   fmt.Println("Error", err)
 }
@@ -22,34 +22,31 @@ if err != nil {
 // Write a fish to the database
 fish := Fish{}
 if err := db.Write("fish", "onefish", fish); err != nil {
-
+  fmt.Println("Error", err)
 }
 
 // Read all fish from the database
 fish := []Fish{}
 if err := db.Read("fish", "", fish); err != nil {
-
+  fmt.Println("Error", err)
 }
 
 // Read a fish from the database
 fish := Fish{}
 if err := db.Read("fish", "onefish", fish); err != nil {
-
+  fmt.Println("Error", err)
 }
 
 // Delete all fish from the database
 if err := db.Delete("fish", ""); err != nil {
-
+  fmt.Println("Error", err)
 }
 
 // Delete a fish from the database
 if err := db.Delete("fish", "onefish"); err != nil {
-
+  fmt.Println("Error", err)
 }
 ```
-
-For an example of a qualified logger see [here](http://godoc.org/github.com/nanobox-io/golang-hatchet).
-
 
 ## Documentation
 Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/golang-scribble).
