@@ -37,51 +37,45 @@ type (
 
 // Options uses for specification of working golang-scribble
 type Options struct {
-	Logger
-	// ExistDir not creates new directory before start
-	ExistDir bool
+	Logger // the logger scribble will use (configurable)
 }
 
 // New creates a new scribble database at the desired directory location, and
 // returns a *Driver to then use for interacting with the database
-func New(dir string, opt *Options) (driver *Driver, err error) {
-	var options Options
-	if opt == nil {
-		options = Options{}
-	} else {
-		options = *opt
-	}
+func New(dir string, options *Options) (*Driver, error) {
+
 	//
 	dir = filepath.Clean(dir)
 
-	// ensure the database location doesn't already exist (we don't want to overwrite
-	// any existing files/database)
-	_, err = os.Stat(dir)
-	if err == nil && !options.ExistDir {
-		fmt.Printf("Unable to create database, '%s' already exists. Please specify a different location.\n", dir)
-		os.Exit(1)
+	// create default options
+	opts := Options{}
+
+	// if options are passed in, use those
+	if options != nil {
+		opts = *options
+	}
+
+	// if no logger is provided, create a default
+	if opts.Logger == nil {
+		opts.Logger = lumber.NewConsoleLogger(lumber.INFO)
 	}
 
 	//
-	if options.Logger == nil {
-		options.Logger = lumber.NewConsoleLogger(lumber.INFO)
-	}
-
-	//
-	driver = &Driver{
+	driver := Driver{
 		dir:     dir,
 		mutexes: make(map[string]sync.Mutex),
-		log:     options.Logger,
+		log:     opts.Logger,
 	}
 
-	options.Logger.Info("Creating scribble database at '%v'...\n", dir)
-
-	//
-	if options.ExistDir && err == nil {
-		return driver, nil
+	// if the database already exists, just use it
+	if _, err := os.Stat(dir); err == nil {
+		opts.Logger.Info("Using '%s' (database already exists)\n", dir)
+		return &driver, nil
 	}
-	// create database
-	return driver, os.MkdirAll(dir, 0755)
+
+	// if the database doesn't exist create it
+	opts.Logger.Info("Creating scribble database at '%s'...\n", dir)
+	return &driver, os.MkdirAll(dir, 0755)
 }
 
 // Write locks the database and attempts to write the record to the database under

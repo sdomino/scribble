@@ -13,7 +13,7 @@ type Fish struct {
 //
 var (
 	db         *Driver
-	database   = "./school"
+	database   = "./deep/school"
 	collection = "fish"
 	onefish    = Fish{}
 	twofish    = Fish{}
@@ -24,40 +24,48 @@ var (
 //
 func TestMain(m *testing.M) {
 
-	var err error
-
-	// create a new scribble
-	if db, err = New(database, nil); err != nil {
-		panic(err)
-	}
+	// remove any thing for a potentially failed previous test
+	os.RemoveAll("./deep")
 
 	// run
 	code := m.Run()
 
 	// cleanup
-	os.RemoveAll(database)
+	os.RemoveAll("./deep")
 
 	// exit
 	os.Exit(code)
 }
 
-//
+// Tests creating a new database, and using an existing database
 func TestNew(t *testing.T) {
-	if _, err := os.Stat(database); err != nil {
-		t.Error("Expected file, got none")
-	}
-}
 
-// Checking opening exist dir
-func TestNewExist(t *testing.T) {
-	var err error
-	if db, err = New(database, &Options{ExistDir: true}); err != nil {
-		panic(err)
+	// database should not exist
+	if _, err := os.Stat(database); err == nil {
+		t.Error("Expected nothing, got database")
+	}
+
+	// create a new database
+	createDB()
+
+	// database should exist
+	if _, err := os.Stat(database); err != nil {
+		t.Error("Expected database, got nothing")
+	}
+
+	// should use existing database
+	createDB()
+
+	// database should exist
+	if _, err := os.Stat(database); err != nil {
+		t.Error("Expected database, got nothing")
 	}
 }
 
 //
 func TestWriteAndRead(t *testing.T) {
+
+	createDB()
 
 	// add fish to database
 	if err := db.Write(collection, "redfish", redfish); err != nil {
@@ -79,6 +87,8 @@ func TestWriteAndRead(t *testing.T) {
 
 //
 func TestReadall(t *testing.T) {
+
+	createDB()
 	createSchool()
 
 	fish, err := db.ReadAll(collection)
@@ -95,6 +105,8 @@ func TestReadall(t *testing.T) {
 
 //
 func TestWriteAndReadEmpty(t *testing.T) {
+
+	createDB()
 
 	// create a fish with no home
 	if err := db.Write("", "redfish", redfish); err == nil {
@@ -117,6 +129,8 @@ func TestWriteAndReadEmpty(t *testing.T) {
 //
 func TestDelete(t *testing.T) {
 
+	createDB()
+
 	// add fish to database
 	if err := db.Write(collection, "redfish", redfish); err != nil {
 		t.Error("Create fish failed: ", err.Error())
@@ -137,6 +151,8 @@ func TestDelete(t *testing.T) {
 
 //
 func TestDeleteall(t *testing.T) {
+
+	createDB()
 	createSchool()
 
 	if err := db.Delete(collection, ""); err != nil {
@@ -151,11 +167,23 @@ func TestDeleteall(t *testing.T) {
 }
 
 //
+
+// create a new scribble database
+func createDB() error {
+	var err error
+	if db, err = New(database, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// create a fish
 func createFish(fish Fish) error {
 	return db.Write(collection, fish.Type, fish)
 }
 
-//
+// create many fish
 func createSchool() error {
 	for _, f := range []Fish{Fish{Type: "red"}, Fish{Type: "blue"}} {
 		if err := db.Write(collection, f.Type, f); err != nil {
@@ -166,12 +194,12 @@ func createSchool() error {
 	return nil
 }
 
-//
+// destroy a fish
 func destroyFish(name string) error {
 	return db.Delete(collection, name)
 }
 
-//
+// destroy all fish
 func destroySchool() error {
 	return db.Delete(collection, "")
 }
