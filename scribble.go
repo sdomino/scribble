@@ -35,34 +35,51 @@ type (
 	}
 )
 
+// Options uses for specification of working golang-scribble
+type Options struct {
+	Logger
+	// ExistDir not creates new directory before start
+	ExistDir bool
+}
+
 // New creates a new scribble database at the desired directory location, and
 // returns a *Driver to then use for interacting with the database
-func New(dir string, logger Logger) (driver *Driver, err error) {
-
+func New(dir string, opt *Options) (driver *Driver, err error) {
+	var options Options
+	if opt == nil {
+		options = Options{}
+	} else {
+		options = *opt
+	}
 	//
 	dir = filepath.Clean(dir)
 
 	// ensure the database location doesn't already exist (we don't want to overwrite
 	// any existing files/database)
-	if _, err := os.Stat(dir); err == nil {
+	_, err = os.Stat(dir)
+	if err == nil && !options.ExistDir {
 		fmt.Printf("Unable to create database, '%s' already exists. Please specify a different location.\n", dir)
 		os.Exit(1)
 	}
 
 	//
-	if logger == nil {
-		logger = lumber.NewConsoleLogger(lumber.INFO)
+	if options.Logger == nil {
+		options.Logger = lumber.NewConsoleLogger(lumber.INFO)
 	}
 
 	//
 	driver = &Driver{
 		dir:     dir,
 		mutexes: make(map[string]sync.Mutex),
-		log:     logger,
+		log:     options.Logger,
 	}
 
-	logger.Info("Creating scribble database at '%v'...\n", dir)
+	options.Logger.Info("Creating scribble database at '%v'...\n", dir)
 
+	//
+	if options.ExistDir && err == nil {
+		return driver, nil
+	}
 	// create database
 	return driver, os.MkdirAll(dir, 0755)
 }
