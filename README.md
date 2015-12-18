@@ -38,7 +38,7 @@ if err != nil {
 }
 
 fish := []Fish{}
-if err := json.Unmarhsal(records, &fish); err != nil {
+if err := json.Unmarshal(records, &fish); err != nil {
   fmt.Println("Error", err)
 }
 
