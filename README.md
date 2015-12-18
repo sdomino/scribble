@@ -25,25 +25,30 @@ if err := db.Write("fish", "onefish", fish); err != nil {
   fmt.Println("Error", err)
 }
 
-// Read all fish from the database
+// Read a fish from the database (passing fish by reference)
 fish := []Fish{}
-if err := db.Read("fish", "", fish); err != nil {
+if err := db.Read("fish", "onefish", &fish); err != nil {
   fmt.Println("Error", err)
 }
 
-// Read a fish from the database
-fish := Fish{}
-if err := db.Read("fish", "onefish", fish); err != nil {
+// Read all fish from the database, unmarshaling the response.
+records, err := db.ReadAll("fish")
+if err != nil {
   fmt.Println("Error", err)
 }
 
-// Delete all fish from the database
-if err := db.Delete("fish", ""); err != nil {
+fish := []Fish{}
+if err := json.Unmarshal(records, &fish); err != nil {
   fmt.Println("Error", err)
 }
 
 // Delete a fish from the database
 if err := db.Delete("fish", "onefish"); err != nil {
+  fmt.Println("Error", err)
+}
+
+// Delete all fish from the database
+if err := db.Delete("fish", ""); err != nil {
   fmt.Println("Error", err)
 }
 ```
@@ -57,7 +62,7 @@ Complete documentation is available on [godoc](http://godoc.org/github.com/nanob
 - Better support for concurrency
 - Better support for sub collections
 - More methods to allow different types of reads/writes
-- More tests (you can never have enough)
+- More tests (you can never have enough!)
 
 
 ## Contributing
