@@ -69,12 +69,12 @@ func New(dir string, options *Options) (*Driver, error) {
 
 	// if the database already exists, just use it
 	if _, err := os.Stat(dir); err == nil {
-		opts.Logger.Info("Using '%s' (database already exists)\n", dir)
+		opts.Logger.Debug("Using '%s' (database already exists)\n", dir)
 		return &driver, nil
 	}
 
 	// if the database doesn't exist create it
-	opts.Logger.Info("Creating scribble database at '%s'...\n", dir)
+	opts.Logger.Debug("Creating scribble database at '%s'...\n", dir)
 	return &driver, os.MkdirAll(dir, 0755)
 }
 
