@@ -54,8 +54,8 @@ if err := db.Delete("fish", ""); err != nil {
 ```
 
 ## Documentation
-Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/golang-scribble).
 
+Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/golang-scribble).
 
 ## Todo/Doing
 - Support for windows
@@ -64,10 +64,6 @@ Complete documentation is available on [godoc](http://godoc.org/github.com/nanob
 - More methods to allow different types of reads/writes
 - More tests (you can never have enough!)
 
-
 ## Contributing
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Added some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+
+Contributions to scribble are welcome and encouraged. Scribble is a [Nanobox](https://nanobox.io) project and contributions should follow the [Nanobox Contribution Process & Guidelines](https://docs.nanobox.io/contributing/).
