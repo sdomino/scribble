@@ -1,21 +1,23 @@
-// scribble is a tiny JSON database
+// Package scribble is a tiny JSON database
 package scribble
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jcelliott/lumber"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/jcelliott/lumber"
 )
 
+// Version is the current version of the project
 const Version = "1.0.4"
 
 type (
 
-	//
+	// Logger is a generic logger interface
 	Logger interface {
 		Fatal(string, ...interface{})
 		Error(string, ...interface{})
@@ -25,7 +27,7 @@ type (
 		Trace(string, ...interface{})
 	}
 
-	// a Driver is what is used to interact with the scribble database. It runs
+	// Driver is what is used to interact with the scribble database. It runs
 	// transactions, and provides log output
 	Driver struct {
 		mutex   sync.Mutex
