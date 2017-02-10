@@ -1,4 +1,4 @@
-Scribble [![Coverage Status](https://coveralls.io/repos/github/nanobox-io/golang-scribble/badge.svg?branch=master)](https://coveralls.io/github/nanobox-io/golang-scribble?branch=master) [![GoDoc](https://godoc.org/github.com/boltdb/bolt?status.svg)](http://godoc.org/github.com/nanobox-io/golang-scribble)
+Scribble [![Coverage Status](https://coveralls.io/repos/github/nanobox-io/golang-scribble/badge.svg?branch=master)](https://coveralls.io/github/nanobox-io/golang-scribble?branch=master) [![GoDoc](https://godoc.org/github.com/boltdb/bolt?status.svg)](http://godoc.org/github.com/nanobox-io/golang-scribble) [![Go Report Card](https://goreportcard.com/badge/github.com/nanobox-io/golang-scribble)](https://goreportcard.com/report/github.com/nanobox-io/golang-scribble)
 --------
 
 A tiny JSON database in Golang
