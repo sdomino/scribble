@@ -185,7 +185,7 @@ func createFish(fish Fish) error {
 
 // create many fish
 func createSchool() error {
-	for _, f := range []Fish{Fish{Type: "red"}, Fish{Type: "blue"}} {
+	for _, f := range []Fish{{Type: "red"}, {Type: "blue"}} {
 		if err := db.Write(collection, f.Type, f); err != nil {
 			return err
 		}
