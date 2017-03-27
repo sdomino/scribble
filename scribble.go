@@ -31,7 +31,7 @@ type (
 	// transactions, and provides log output
 	Driver struct {
 		mutex   sync.Mutex
-		mutexes map[string]sync.Mutex
+		mutexes map[string]*sync.Mutex
 		dir     string // the directory where scribble will create the database
 		log     Logger // the logger scribble will log to
 	}
@@ -65,7 +65,7 @@ func New(dir string, options *Options) (*Driver, error) {
 	//
 	driver := Driver{
 		dir:     dir,
-		mutexes: make(map[string]sync.Mutex),
+		mutexes: make(map[string]*sync.Mutex),
 		log:     opts.Logger,
 	}
 
@@ -199,7 +199,7 @@ func (d *Driver) ReadAll(collection string) ([]string, error) {
 func (d *Driver) Delete(collection, resource string) error {
 	path := filepath.Join(collection, resource)
 	//
-	mutex := d.getOrCreateMutex(path)
+	mutex := d.getOrCreateMutex(collection)
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -237,7 +237,7 @@ func stat(path string) (fi os.FileInfo, err error) {
 
 // getOrCreateMutex creates a new collection specific mutex any time a collection
 // is being modfied to avoid unsafe operations
-func (d *Driver) getOrCreateMutex(collection string) sync.Mutex {
+func (d *Driver) getOrCreateMutex(collection string) *sync.Mutex {
 
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -246,7 +246,7 @@ func (d *Driver) getOrCreateMutex(collection string) sync.Mutex {
 
 	// if the mutex doesn't exist make it
 	if !ok {
-		m = sync.Mutex{}
+		m = &sync.Mutex{}
 		d.mutexes[collection] = m
 	}
 
