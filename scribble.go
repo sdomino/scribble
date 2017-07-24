@@ -13,6 +13,7 @@ import (
 	"path"
 	"strings"
 	"strconv"
+	"log"
 )
 
 // Version is the current version of the project
@@ -103,10 +104,14 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 	return d.writeFile(collection, resource, v)
 }
 
+func getCollectionDir(dir string, collection string) string {
+	return filepath.Join(dir, collection)
+}
+
 // Writes a file to disk
 func (d *Driver) writeFile(collection string, resource string, v interface{}) error {
 	//
-	dir := filepath.Join(d.dir, collection)
+	dir := getCollectionDir(d.dir, collection)
 	fnlPath := filepath.Join(dir, resource+".json")
 	tmpPath := fnlPath + ".tmp"
 
@@ -144,12 +149,18 @@ func (d *Driver) WriteAutoId(collection string, v interface{}) (resourceId int64
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	dir := getCollectionDir(d.dir, collection)
+
 	// list the directory, sort it, take the last entry then parse and increment the last ID
-	files, err := ioutil.ReadDir(d.dir)
+	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		fmt.Printf("Error listing directory %s: %s", d.dir, err.Error())
-		return resourceId, err
+		if !os.IsNotExist(err) {
+			fmt.Printf("Error listing directory %s: %s", dir, err.Error())
+			return resourceId, err
+		}
 	}
+
+	log.Println("len", len(files))
 
 	if len(files) == 0 {
 		resourceId = 1
@@ -160,11 +171,13 @@ func (d *Driver) WriteAutoId(collection string, v interface{}) (resourceId int64
 
 		baseName := strings.TrimSuffix(lastFile.Name(), ext)
 
-		resourceId, err := strconv.ParseInt(baseName, 10, 8)
+		resourceId, err = strconv.ParseInt(baseName, 10, 8)
 		if err != nil {
 			fmt.Printf("Error parsing string '%s' as integer", baseName, err.Error())
 			return resourceId, err
 		}
+
+		resourceId = resourceId + 1
 	}
 
 	stringResourceId := fmt.Sprintf("%d", resourceId)
