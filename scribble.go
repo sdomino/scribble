@@ -10,13 +10,15 @@ import (
 	"sync"
 
 	"github.com/jcelliott/lumber"
+	"path"
+	"strings"
+	"strconv"
 )
 
 // Version is the current version of the project
 const Version = "1.0.4"
 
 type (
-
 	// Logger is a generic logger interface
 	Logger interface {
 		Fatal(string, ...interface{})
@@ -98,6 +100,11 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	return d.writeFile(collection, resource, v)
+}
+
+// Writes a file to disk
+func (d *Driver) writeFile(collection string, resource string, v interface{}) error {
 	//
 	dir := filepath.Join(d.dir, collection)
 	fnlPath := filepath.Join(dir, resource+".json")
@@ -121,6 +128,51 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 
 	// move final file into place
 	return os.Rename(tmpPath, fnlPath)
+}
+
+// Locks the database, gets the next available integer resource ID and attempts to write the
+// record to the database under the [collection] specified with the generated [resource] ID
+func (d *Driver) WriteAutoId(collection string, v interface{}) (resourceId int64, err error) {
+	resourceId = -1
+
+	// ensure there is a place to save record
+	if collection == "" {
+		return resourceId, fmt.Errorf("Missing collection - no place to save record!")
+	}
+
+	mutex := d.getOrCreateMutex(collection)
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	// list the directory, sort it, take the last entry then parse and increment the last ID
+	files, err := ioutil.ReadDir(d.dir)
+	if err != nil {
+		fmt.Printf("Error listing directory %s: %s", d.dir, err.Error())
+		return resourceId, err
+	}
+
+	if len(files) == 0 {
+		resourceId = 1
+	} else {
+		lastFile := files[len(files)-1]
+
+		ext := path.Ext(lastFile.Name())
+
+		baseName := strings.TrimSuffix(lastFile.Name(), ext)
+
+		resourceId, err := strconv.ParseInt(baseName, 10, 8)
+		if err != nil {
+			fmt.Printf("Error parsing string '%s' as integer", baseName, err.Error())
+			return resourceId, err
+		}
+	}
+
+	stringResourceId := fmt.Sprintf("%d", resourceId)
+
+	fmt.Printf("Writing resource under auto-generated ID '%s'\n", stringResourceId)
+	err = d.writeFile(collection, stringResourceId, v)
+
+	return resourceId, err
 }
 
 // Read a record from the database
@@ -212,11 +264,11 @@ func (d *Driver) Delete(collection, resource string) error {
 	case fi == nil, err != nil:
 		return fmt.Errorf("Unable to find file or directory named %v\n", path)
 
-	// remove directory and all contents
+		// remove directory and all contents
 	case fi.Mode().IsDir():
 		return os.RemoveAll(dir)
 
-	// remove file
+		// remove file
 	case fi.Mode().IsRegular():
 		return os.RemoveAll(dir + ".json")
 	}

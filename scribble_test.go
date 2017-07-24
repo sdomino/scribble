@@ -3,6 +3,7 @@ package scribble
 import (
 	"os"
 	"testing"
+	"fmt"
 )
 
 //
@@ -74,6 +75,36 @@ func TestWriteAndRead(t *testing.T) {
 
 	// read fish from database
 	if err := db.Read(collection, "redfish", &onefish); err != nil {
+		t.Error("Failed to read: ", err.Error())
+	}
+
+	//
+	if onefish.Type != "red" {
+		t.Error("Expected red fish, got: ", onefish.Type)
+	}
+
+	destroySchool()
+}
+
+//
+func TestWriteAutoIdAndRead(t *testing.T) {
+
+	createDB()
+
+	// add fish to database
+	id, err := db.WriteAutoId(collection, redfish);
+	if err != nil {
+		t.Error("Create fish failed: ", err.Error())
+	}
+
+	if id <= 0 {
+		t.Error("Auto-generated ID should have been > 0")
+	}
+
+	stringId := fmt.Sprintf("%d", id)
+
+	// read fish from database
+	if err := db.Read(collection, stringId, &onefish); err != nil {
 		t.Error("Failed to read: ", err.Error())
 	}
 
