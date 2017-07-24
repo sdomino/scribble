@@ -13,7 +13,6 @@ import (
 	"path"
 	"strings"
 	"strconv"
-	"log"
 )
 
 // Version is the current version of the project
@@ -160,8 +159,6 @@ func (d *Driver) WriteAutoId(collection string, v interface{}) (resourceId int64
 		}
 	}
 
-	log.Println("len", len(files))
-
 	if len(files) == 0 {
 		resourceId = 1
 	} else {
@@ -180,7 +177,7 @@ func (d *Driver) WriteAutoId(collection string, v interface{}) (resourceId int64
 		resourceId = resourceId + 1
 	}
 
-	stringResourceId := fmt.Sprintf("%d", resourceId)
+	stringResourceId := fmt.Sprintf("%08d", resourceId)
 
 	fmt.Printf("Writing resource under auto-generated ID '%s'\n", stringResourceId)
 	err = d.writeFile(collection, stringResourceId, v)
