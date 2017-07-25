@@ -3,6 +3,7 @@ package scribble
 import (
 	"os"
 	"testing"
+	"fmt"
 )
 
 //
@@ -91,17 +92,17 @@ func TestWriteAutoIdAndRead(t *testing.T) {
 	createDB()
 
 	// add fish to database
-	id, err := db.WriteAutoId(collection, redfish);
+	firstId, err := db.WriteAutoId(collection, redfish);
 	if err != nil {
 		t.Error("Create fish failed: ", err.Error())
 	}
 
-	if id != 1 {
+	if firstId != 1 {
 		t.Error("Auto-generated ID should have been 1")
 	}
 
 	// add another fish to database
-	id, err = db.WriteAutoId(collection, bluefish);
+	id, err := db.WriteAutoId(collection, bluefish);
 	if err != nil {
 		t.Error("Create fish failed: ", err.Error())
 	}
@@ -110,8 +111,11 @@ func TestWriteAutoIdAndRead(t *testing.T) {
 		t.Error("Auto-generated ID should have been 2")
 	}
 
+	// zero pad the same as used in the Write method
+	idString := fmt.Sprintf("%08d", firstId)
+
 	// read fish from database
-	if err := db.Read(collection, "1", &onefish); err != nil {
+	if err := db.Read(collection, idString, &onefish); err != nil {
 		t.Error("Failed to read: ", err.Error())
 	}
 

@@ -61,6 +61,12 @@ id, err := db.WriteAutoId("fish", fish); if err != nil {
 }
 
 // ID == 1
+
+// zero-pad when loading
+idString := fmt.Sprintf("%08d", firstId)
+if err := db.Read(collection, idString, &fish); err != nil {
+  fmt.Println("Error", err)
+}
 ```
 
 ## Documentation
