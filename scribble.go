@@ -168,7 +168,7 @@ func (d *Driver) WriteAutoId(collection string, v interface{}) (resourceId int64
 
 		baseName := strings.TrimSuffix(lastFile.Name(), ext)
 
-		resourceId, err = strconv.ParseInt(baseName, 10, 8)
+		resourceId, err = strconv.ParseInt(baseName, 10, 64)
 		if err != nil {
 			fmt.Printf("Error parsing string '%s' as integer", baseName, err.Error())
 			return resourceId, err
