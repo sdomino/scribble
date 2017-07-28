@@ -3,6 +3,7 @@ package scribble
 import (
 	"os"
 	"testing"
+	"fmt"
 )
 
 //
@@ -80,6 +81,71 @@ func TestWriteAndRead(t *testing.T) {
 	//
 	if onefish.Type != "red" {
 		t.Error("Expected red fish, got: ", onefish.Type)
+	}
+
+	destroySchool()
+}
+
+//
+func TestWriteAutoIdAndRead(t *testing.T) {
+
+	createDB()
+
+	// add fish to database
+	firstId, err := db.WriteAutoId(collection, redfish);
+	if err != nil {
+		t.Error("Create fish failed: ", err.Error())
+	}
+
+	if firstId != 1 {
+		t.Error("Auto-generated ID should have been 1")
+	}
+
+	// add another fish to database
+	id, err := db.WriteAutoId(collection, bluefish);
+	if err != nil {
+		t.Error("Create fish failed: ", err.Error())
+	}
+
+	if id != 2 {
+		t.Error("Auto-generated ID should have been 2")
+	}
+
+	// zero pad the same as used in the Write method
+	idString := fmt.Sprintf("%08d", firstId)
+
+	// read fish from database
+	if err := db.Read(collection, idString, &onefish); err != nil {
+		t.Error("Failed to read: ", err.Error())
+	}
+
+	//
+	if onefish.Type != "red" {
+		t.Error("Expected red fish, got: ", onefish.Type)
+	}
+
+	destroySchool()
+}
+
+// Test that it parses ints > 128
+func TestWriteAutoIdOverflow(t *testing.T) {
+
+	createDB()
+
+	string128 := fmt.Sprintf("%08d", 128)
+
+	if err := db.Write(collection, string128, redfish); err != nil {
+		t.Error("Create fish failed: ", err.Error())
+	}
+
+	// add fish to database
+	autoId, err := db.WriteAutoId(collection, redfish);
+	if err != nil {
+		t.Error("Create fish failed: ", err.Error())
+	}
+
+	if autoId != 129 {
+		t.Error("Auto-generated ID should have been 129")
 	}
 
 	destroySchool()

@@ -51,6 +51,24 @@ if err := db.Delete("fish", ""); err != nil {
 }
 ```
 
+Also supports automatically generating integer IDs.
+
+```
+// Write a fish to the database
+fish := Fish{}
+id, err := db.WriteAutoId("fish", fish); if err != nil {
+  fmt.Println("Error", err)
+}
+
+// ID == 1
+
+// zero-pad when loading
+idString := fmt.Sprintf("%08d", firstId)
+if err := db.Read(collection, idString, &fish); err != nil {
+  fmt.Println("Error", err)
+}
+```
+
 ## Documentation
 - Complete documentation is available on [godoc](http://godoc.org/github.com/nanobox-io/golang-scribble).
 - Coverage Report is available on [gocover](https://gocover.io/github.com/nanobox-io/golang-scribble)
