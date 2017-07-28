@@ -127,6 +127,30 @@ func TestWriteAutoIdAndRead(t *testing.T) {
 	destroySchool()
 }
 
+// Test that it parses ints > 128
+func TestWriteAutoIdOverflow(t *testing.T) {
+
+	createDB()
+
+	string128 := fmt.Sprintf("%08d", 128)
+
+	if err := db.Write(collection, string128, redfish); err != nil {
+		t.Error("Create fish failed: ", err.Error())
+	}
+
+	// add fish to database
+	autoId, err := db.WriteAutoId(collection, redfish);
+	if err != nil {
+		t.Error("Create fish failed: ", err.Error())
+	}
+
+	if autoId != 129 {
+		t.Error("Auto-generated ID should have been 129")
+	}
+
+	destroySchool()
+}
+
 //
 func TestReadall(t *testing.T) {
 
