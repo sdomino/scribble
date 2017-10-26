@@ -24,8 +24,8 @@ if err := db.Write("fish", "onefish", fish); err != nil {
 }
 
 // Read a fish from the database (passing fish by reference)
-fish := []Fish{}
-if err := db.Read("fish", "onefish", &fish); err != nil {
+onefish := Fish{}
+if err := db.Read("fish", "onefish", &onefish); err != nil {
   fmt.Println("Error", err)
 }
 
@@ -35,9 +35,13 @@ if err != nil {
   fmt.Println("Error", err)
 }
 
-fish := []Fish{}
-if err := json.Unmarshal([]byte(records), &fish); err != nil {
-  fmt.Println("Error", err)
+fishies := []Fish{}
+for _, f := range records {
+  fishFound := Fish{}
+  if err := json.Unmarshal([]byte(f), &fishFound); err != nil {
+    fmt.Println("Error", err)
+  }
+  fishies = append(fishies, fishFound)
 }
 
 // Delete a fish from the database
