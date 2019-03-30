@@ -5,7 +5,7 @@ A tiny JSON database in Golang
 
 ### Installation
 
-Install using `go get github.com/nanobox-io/golang-scribble`.
+Install using `go get github.com/sdomino/scribble`.
 
 ### Usage
 
