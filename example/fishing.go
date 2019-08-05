@@ -3,8 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-
-	scribble "github.com/nanobox-io/golang-scribble"
+	"github.com/sdomino/scribble"
 )
 
 // a fish
