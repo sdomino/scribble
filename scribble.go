@@ -17,12 +17,11 @@ import (
 const Version = "1.0.4"
 
 var (
-	ErrMissingResource   = errors.New("missing resource - unable to save record, no name")
+	ErrMissingResource   = errors.New("missing resource - unable to save record")
 	ErrMissingCollection = errors.New("missing collection - no place to save record")
 )
 
 type (
-
 	// Logger is a generic logger interface
 	Logger interface {
 		Fatal(string, ...interface{})
