@@ -3,6 +3,7 @@ package scribble
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,6 +15,11 @@ import (
 
 // Version is the current version of the project
 const Version = "1.0.4"
+
+var (
+	ErrMissingResource   = errors.New("missing resource - unable to save record, no name")
+	ErrMissingCollection = errors.New("missing collection - no place to save record")
+)
 
 type (
 
@@ -86,12 +92,12 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 
 	// ensure there is a place to save record
 	if collection == "" {
-		return fmt.Errorf("Missing collection - no place to save record!")
+		return ErrMissingCollection
 	}
 
 	// ensure there is a resource (name) to save record as
 	if resource == "" {
-		return fmt.Errorf("Missing resource - unable to save record (no name)!")
+		return ErrMissingResource
 	}
 
 	mutex := d.getOrCreateMutex(collection)
@@ -128,12 +134,12 @@ func (d *Driver) Read(collection, resource string, v interface{}) error {
 
 	// ensure there is a place to save record
 	if collection == "" {
-		return fmt.Errorf("Missing collection - no place to save record!")
+		return ErrMissingCollection
 	}
 
 	// ensure there is a resource (name) to save record as
 	if resource == "" {
-		return fmt.Errorf("Missing resource - unable to save record (no name)!")
+		return ErrMissingResource
 	}
 
 	//
@@ -160,7 +166,7 @@ func (d *Driver) ReadAll(collection string) ([]string, error) {
 
 	// ensure there is a collection to read
 	if collection == "" {
-		return nil, fmt.Errorf("Missing collection - unable to record location!")
+		return nil, ErrMissingCollection
 	}
 
 	//
@@ -236,7 +242,7 @@ func stat(path string) (fi os.FileInfo, err error) {
 }
 
 // getOrCreateMutex creates a new collection specific mutex any time a collection
-// is being modfied to avoid unsafe operations
+// is being modified to avoid unsafe operations
 func (d *Driver) getOrCreateMutex(collection string) *sync.Mutex {
 
 	d.mutex.Lock()
