@@ -3,6 +3,7 @@ package scribble
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,8 +16,12 @@ import (
 // Version is the current version of the project
 const Version = "1.0.4"
 
-type (
+var (
+	ErrMissingResource   = errors.New("missing resource - unable to save record")
+	ErrMissingCollection = errors.New("missing collection - no place to save record")
+)
 
+type (
 	// Logger is a generic logger interface
 	Logger interface {
 		Fatal(string, ...interface{})
@@ -86,12 +91,12 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 
 	// ensure there is a place to save record
 	if collection == "" {
-		return fmt.Errorf("Missing collection - no place to save record!")
+		return ErrMissingCollection
 	}
 
 	// ensure there is a resource (name) to save record as
 	if resource == "" {
-		return fmt.Errorf("Missing resource - unable to save record (no name)!")
+		return ErrMissingResource
 	}
 
 	mutex := d.getOrCreateMutex(collection)
@@ -103,19 +108,21 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 	fnlPath := filepath.Join(dir, resource+".json")
 	tmpPath := fnlPath + ".tmp"
 
+	return write(dir, tmpPath, fnlPath, v)
+}
+
+func write(dir, tmpPath, dstPath string, v interface{}) error {
+
 	// create collection directory
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
 
-	//
+	// marshal the pointer to a non-struct and indent with tab
 	b, err := json.MarshalIndent(v, "", "\t")
 	if err != nil {
 		return err
 	}
-
-	// add newline to the end
-	b = append(b, byte('\n'))
 
 	// write marshaled data to the temp file
 	if err := ioutil.WriteFile(tmpPath, b, 0644); err != nil {
@@ -123,7 +130,7 @@ func (d *Driver) Write(collection, resource string, v interface{}) error {
 	}
 
 	// move final file into place
-	return os.Rename(tmpPath, fnlPath)
+	return os.Rename(tmpPath, dstPath)
 }
 
 // Read a record from the database
@@ -131,12 +138,12 @@ func (d *Driver) Read(collection, resource string, v interface{}) error {
 
 	// ensure there is a place to save record
 	if collection == "" {
-		return fmt.Errorf("Missing collection - no place to save record!")
+		return ErrMissingCollection
 	}
 
 	// ensure there is a resource (name) to save record as
 	if resource == "" {
-		return fmt.Errorf("Missing resource - unable to save record (no name)!")
+		return ErrMissingResource
 	}
 
 	//
@@ -148,7 +155,13 @@ func (d *Driver) Read(collection, resource string, v interface{}) error {
 	}
 
 	// read record from database
+	return read(record, v)
+}
+
+func read(record string, v interface{}) error {
+
 	b, err := ioutil.ReadFile(record + ".json")
+
 	if err != nil {
 		return err
 	}
@@ -159,11 +172,11 @@ func (d *Driver) Read(collection, resource string, v interface{}) error {
 
 // ReadAll records from a collection; this is returned as a slice of strings because
 // there is no way of knowing what type the record is.
-func (d *Driver) ReadAll(collection string) ([]string, error) {
+func (d *Driver) ReadAll(collection string) ([][]byte, error) {
 
 	// ensure there is a collection to read
 	if collection == "" {
-		return nil, fmt.Errorf("Missing collection - unable to record location!")
+		return nil, ErrMissingCollection
 	}
 
 	//
@@ -178,19 +191,25 @@ func (d *Driver) ReadAll(collection string) ([]string, error) {
 	// the collection is either empty or doesn't exist
 	files, _ := ioutil.ReadDir(dir)
 
+	return readAll(files, dir)
+}
+
+func readAll(files []os.FileInfo, dir string) ([][]byte, error) {
 	// the files read from the database
-	var records []string
+	var records [][]byte
 
 	// iterate over each of the files, attempting to read the file. If successful
-	// append the files to the collection of read files
+	// append the files to the collection of read
 	for _, file := range files {
+
 		b, err := ioutil.ReadFile(filepath.Join(dir, file.Name()))
+
 		if err != nil {
 			return nil, err
 		}
 
 		// append read file
-		records = append(records, string(b))
+		records = append(records, b)
 	}
 
 	// unmarhsal the read files as a comma delimeted byte array
@@ -239,7 +258,7 @@ func stat(path string) (fi os.FileInfo, err error) {
 }
 
 // getOrCreateMutex creates a new collection specific mutex any time a collection
-// is being modfied to avoid unsafe operations
+// is being modified to avoid unsafe operations
 func (d *Driver) getOrCreateMutex(collection string) *sync.Mutex {
 
 	d.mutex.Lock()
