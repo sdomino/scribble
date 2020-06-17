@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/jcelliott/lumber"
@@ -214,6 +215,35 @@ func readAll(files []os.FileInfo, dir string) ([][]byte, error) {
 
 	// unmarhsal the read files as a comma delimeted byte array
 	return records, nil
+}
+
+// List ID of records from a collection; this is returned as a slice of strings.
+func (d *Driver) List(collection string) ([]string, error) {
+
+	// ensure there is a collection to read
+	if collection == "" {
+		return nil, ErrMissingCollection
+	}
+
+	//
+	dir := filepath.Join(d.dir, collection)
+
+	// check to see if collection (directory) exists
+	if _, err := stat(dir); err != nil {
+		return nil, err
+	}
+
+	// the IDs of collection
+	var recordsIDs []string
+
+	for _, file := range files {
+		name := file.Name()
+		if strings.HasSuffix(name, ".json") {
+			recordsIDs = append(recordsIDs, name[:len(name)-5])
+		}
+	}
+
+	return recordsIDs, nil
 }
 
 // Delete locks that database and then attempts to remove the collection/resource
