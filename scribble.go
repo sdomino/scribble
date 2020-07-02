@@ -229,7 +229,12 @@ func (d *Driver) List(collection string) ([]string, error) {
 	dir := filepath.Join(d.dir, collection)
 
 	// check to see if collection (directory) exists
-	if _, err := stat(dir); err != nil {
+	//if _, err := stat(dir); err != nil {
+	//	return nil, err
+	//}
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
 		return nil, err
 	}
 
