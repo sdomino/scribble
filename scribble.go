@@ -149,19 +149,13 @@ func (d *Driver) Read(collection, resource string, v interface{}) error {
 	//
 	record := filepath.Join(d.dir, collection, resource)
 
-	// check to see if file exists
-	if _, err := stat(record); err != nil {
-		return err
-	}
-
-	// read record from database
+	// read record from database; if the file doesn't exist `read` will return an err
 	return read(record, v)
 }
 
 func read(record string, v interface{}) error {
 
 	b, err := ioutil.ReadFile(record + ".json")
-
 	if err != nil {
 		return err
 	}
@@ -182,14 +176,12 @@ func (d *Driver) ReadAll(collection string) ([][]byte, error) {
 	//
 	dir := filepath.Join(d.dir, collection)
 
-	// check to see if collection (directory) exists
-	if _, err := stat(dir); err != nil {
-		return nil, err
-	}
-
 	// read all the files in the transaction.Collection; an error here just means
 	// the collection is either empty or doesn't exist
-	files, _ := ioutil.ReadDir(dir)
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
 
 	return readAll(files, dir)
 }
@@ -216,7 +208,7 @@ func readAll(files []os.FileInfo, dir string) ([][]byte, error) {
 	return records, nil
 }
 
-// Delete locks that database and then attempts to remove the collection/resource
+// Delete locks the database then attempts to remove the collection/resource
 // specified by [path]
 func (d *Driver) Delete(collection, resource string) error {
 	path := filepath.Join(collection, resource)
