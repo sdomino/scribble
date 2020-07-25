@@ -243,7 +243,7 @@ func (d *Driver) List(collection string) ([]string, error) {
 
 	for _, file := range files {
 		name := file.Name()
-		if strings.HasSuffix(name, ".json") {
+		if strings.HasSuffix(name, ".json") && !strings.HasPrefix(name, ".#") {
 			recordsIDs = append(recordsIDs, name[:len(name)-5])
 		}
 	}
