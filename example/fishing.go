@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/sdomino/scribble"
 )
 
@@ -15,7 +16,7 @@ func main() {
 
 	db, err := scribble.New(dir, nil)
 	if err != nil {
-		fmt.Println("Error", err)
+		fmt.Println("Error", err.Error())
 	}
 
 	// Write a fish to the database
@@ -26,13 +27,13 @@ func main() {
 	// Read a fish from the database (passing fish by reference)
 	onefish := Fish{}
 	if err := db.Read("fish", "onefish", &onefish); err != nil {
-		fmt.Println("Error", err)
+		fmt.Println("Error", err.Error())
 	}
 
 	// Read all fish from the database, unmarshaling the response.
 	records, err := db.ReadAll("fish")
 	if err != nil {
-		fmt.Println("Error", err)
+		fmt.Println("Error", err.Error())
 	}
 
 	fishies := []Fish{}

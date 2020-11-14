@@ -6,11 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/jcelliott/lumber"
 )
 
 // Version is the current version of the project
@@ -22,29 +21,19 @@ var (
 )
 
 type (
-	// Logger is a generic logger interface
-	Logger interface {
-		Fatal(string, ...interface{})
-		Error(string, ...interface{})
-		Warn(string, ...interface{})
-		Info(string, ...interface{})
-		Debug(string, ...interface{})
-		Trace(string, ...interface{})
-	}
-
 	// Driver is what is used to interact with the scribble database. It runs
 	// transactions, and provides log output
 	Driver struct {
 		mutex   sync.Mutex
 		mutexes map[string]*sync.Mutex
-		dir     string // the directory where scribble will create the database
-		log     Logger // the logger scribble will log to
+		dir     string      // the directory where scribble will create the database
+		log     *log.Logger // the logger scribble will log to
 	}
 )
 
 // Options uses for specification of working golang-scribble
 type Options struct {
-	Logger // the logger scribble will use (configurable)
+	Logger *log.Logger // the logger scribble will use (configurable)
 }
 
 // New creates a new scribble database at the desired directory location, and
@@ -64,7 +53,7 @@ func New(dir string, options *Options) (*Driver, error) {
 
 	// if no logger is provided, create a default
 	if opts.Logger == nil {
-		opts.Logger = lumber.NewConsoleLogger(lumber.INFO)
+		opts.Logger = log.New(os.Stdout, "scribble> ", log.LstdFlags)
 	}
 
 	//
@@ -76,12 +65,12 @@ func New(dir string, options *Options) (*Driver, error) {
 
 	// if the database already exists, just use it
 	if _, err := os.Stat(dir); err == nil {
-		opts.Logger.Debug("Using '%s' (database already exists)\n", dir)
+		opts.Logger.Printf("Using '%s' (database already exists)\n", dir)
 		return &driver, nil
 	}
 
 	// if the database doesn't exist create it
-	opts.Logger.Debug("Creating scribble database at '%s'...\n", dir)
+	opts.Logger.Printf("Creating database at '%s'...\n", dir)
 	return &driver, os.MkdirAll(dir, 0755)
 }
 
@@ -238,7 +227,6 @@ func (d *Driver) Delete(collection, resource string) error {
 	return nil
 }
 
-//
 func stat(path string) (fi os.FileInfo, err error) {
 
 	// check for dir, if path isn't a directory check to see if it's a file
