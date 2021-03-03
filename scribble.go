@@ -180,8 +180,8 @@ func (d *Driver) ReadAll(collection string) ([][]byte, error) {
 		return nil, ErrMissingCollection
 	}
 
-	//
 	dir := filepath.Join(d.dir, collection)
+	os.MkdirAll(dir, 0777)
 
 	// check to see if collection (directory) exists
 	if _, err := stat(dir); err != nil {
