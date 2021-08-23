@@ -124,6 +124,9 @@ func write(dir, tmpPath, dstPath string, v interface{}) error {
 		return err
 	}
 
+	// add newline to the end
+	b = append(b, byte('\n'))
+
 	// write marshaled data to the temp file
 	if err := ioutil.WriteFile(tmpPath, b, 0644); err != nil {
 		return err
@@ -161,7 +164,7 @@ func read(record string, v interface{}) error {
 	}
 
 	// unmarshal data
-	return json.Unmarshal(b, &v)
+	return json.Unmarshal(b, v)
 }
 
 // ReadAll records from a collection; this is returned as a slice of strings because
